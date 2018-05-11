@@ -13,18 +13,18 @@ import eus.ehu.dif.recsys.dao.UserRatingDAO;
 
 /**
  * Esta clase permite realizar las recomendaciones al usuario utilizando la
- * tÃ©cnica Content Based Filtering
+ * técnica Content Based Filtering
  */
 public class TopNItemRecommender {
 	private static TopNItemRecommender mTopNItemRecommender = new TopNItemRecommender();
 
-	private ItemScorer scorer = TFIDFItemScorer.getItemScorer();
+	private ItemScorer scorer = ItemItemScorer.getItemScorer();
 	
 	private TopNItemRecommender() {
 	}
 
 	/**
-	 * MÃ©todo que devuelve la instancia Ãºnica de la clase (Singleton)
+	 * Método que devuelve la instancia única de la clase (Singleton)
 	 * 
 	 * @return la instancia de recomendador
 	 */
@@ -49,7 +49,7 @@ public class TopNItemRecommender {
 	 * @param pUser
 	 *            el usuario para el que se quieren obtener las recomendaciones
 	 * @param pNumRecs
-	 *            el nÃºmero de recomendaciones deseado
+	 *            el numero de recomendaciones deseado
 	 * @return las pNumRecs mejores recomendaciones
 	 */
 	public List<ScoredId> recommend(int pUser, int pNumRecs) {
@@ -76,6 +76,18 @@ public class TopNItemRecommender {
 				.limit(pNumRecs)
 				.collect(toList());	
 		
+		System.out.println("Recommendations for user: "+pUser);
+		System.out.println("======================================");
+		System.out.println("");
+		for (ScoredId scoredId : listaValoraciones) {
+			StringBuilder stringBuilder = new StringBuilder();
+			stringBuilder.append("User: "+pUser+" ");
+			stringBuilder.append("Item id: "+scoredId.getId()+" ");
+			stringBuilder.append("Score: "+scoredId.getScore()+" ");
+			stringBuilder.append("Item: "+MovieDAO.getMovieDAO().getMovieTitle(scoredId.getId())+" ");
+			System.out.println( stringBuilder.toString());
+		}
+
 		return listaValoraciones;
 
 	}

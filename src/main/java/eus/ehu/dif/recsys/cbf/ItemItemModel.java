@@ -17,6 +17,7 @@ public class ItemItemModel {
 
 	private static ItemItemModel mItemItemModel = new ItemItemModel();
 
+	private Map<Integer, SparseVector> userRatings;
 	private Map<Integer, List<ScoredId>> movieNeighborhood;
 
 	private ItemItemModel() {
@@ -33,6 +34,11 @@ public class ItemItemModel {
 		return movieNeighborhood.get(pItem);
 
 	}
+	
+	public SparseVector getUserRatings(int pUser) {
+		ensureMovieNeighborhood();
+		return userRatings.get(pUser);
+	}
 
 	private void ensureMovieNeighborhood() {
 		if (movieNeighborhood == null) {
@@ -45,22 +51,24 @@ public class ItemItemModel {
 	}
 
 	private void loadMovieNeighborhood() {
+		movieNeighborhood = new HashMap<>();
+		userRatings = new HashMap<>();
 		UserRatingDAO userRatingDao = UserRatingDAO.getUserRatingDAO();
 		Set<Integer> userIds = userRatingDao.getUserIds();
 		Map<Integer, SparseVector> movieRatings = new HashMap<>();
 		for (Integer pUserId : userIds) {
-			SparseVector userRatings = userRatingDao.getUserRatings(pUserId).copy();
-			float userRatingAverage = userRatings.average();
-			for (Integer movieId : userRatings.keySet()) {
+			SparseVector pUserRatings = userRatingDao.getUserRatings(pUserId).copy();
+			userRatings.put(pUserId, pUserRatings);
+			float userRatingAverage = pUserRatings.average();
+			for (Integer movieId : pUserRatings.keySet()) {
 				if (!movieRatings.containsKey(movieId)) {
 					movieRatings.put(movieId, SparseVector.empty());
 				}
-				movieRatings.get(movieId).put(pUserId, userRatings.get(movieId) - userRatingAverage);
+				movieRatings.get(movieId).put(pUserId, pUserRatings.get(movieId) - userRatingAverage);
 			}
 		}
 		
 		CosineSimilarity cosineSimilarity = new CosineSimilarity();
-		movieNeighborhood = new HashMap<>();
 		for (Entry<Integer, SparseVector> entry1 : movieRatings.entrySet()) {
 			Integer movie1Id = entry1.getKey();
 			SparseVector movie1Ratings = entry1.getValue();
@@ -70,7 +78,7 @@ public class ItemItemModel {
 				if(!movie1Id.equals(movie2Id)) {
 					SparseVector movie2Ratings = entry2.getValue();
 					float cosine = cosineSimilarity.similarity(movie1Ratings, movie2Ratings);
-					scores.add(new ScoredId(movie2Id, cosine));
+					scores.add(new ScoredId(movie2Id, Math.max(0, cosine)));
 				}
 			}
 			Collections.sort(scores, ScoredId.compareByScoreDesc());
@@ -79,5 +87,7 @@ public class ItemItemModel {
 		
 
 	}
+
+	
 
 }
