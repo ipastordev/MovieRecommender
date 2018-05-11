@@ -1,4 +1,3 @@
-
 import static org.junit.Assert.assertEquals;
 
 import java.util.List;
@@ -9,9 +8,9 @@ import eus.ehu.dif.recsys.cbf.TopNItemRecommender;
 import eus.ehu.dif.recsys.core.ScoredId;
 
 public class TestTopNItemItemRecommender {
+	
 	@Test
 	public void test() {
-
 		TopNItemRecommender rec = TopNItemRecommender.getTopNItemRecommender();
 		List<ScoredId> results = rec.recommend(2048);
 		assertEquals(5, results.size());
