@@ -1,7 +1,9 @@
 package eus.ehu.dif.recsys.cbf;
 
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toList;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +57,28 @@ public class ItemItemModel {
 		userRatings = new HashMap<>();
 		UserRatingDAO userRatingDao = UserRatingDAO.getUserRatingDAO();
 		Set<Integer> userIds = userRatingDao.getUserIds();
+		Map<Integer, SparseVector> movieRatings = movieRatings(userRatingDao, userIds);
+		CosineSimilarity cosineSimilarity = new CosineSimilarity();
+		for (Entry<Integer, SparseVector> entry1 : movieRatings.entrySet()) {
+			Integer movie1Id = entry1.getKey();
+			SparseVector movie1Ratings = entry1.getValue();
+			List<ScoredId> scores = new ArrayList<>();
+			for (Entry<Integer, SparseVector> entry2 : movieRatings.entrySet()) {
+				Integer movie2Id = entry2.getKey();
+				if(!movie1Id.equals(movie2Id)) {
+					SparseVector movie2Ratings = entry2.getValue();
+					float cosine = cosineSimilarity.similarity(movie1Ratings, movie2Ratings);
+					scores.add(ScoredId.create(movie2Id, Math.max(0, cosine)));
+				}
+			}
+			scores = scores.stream().sorted(comparing(ScoredId::getScore).reversed()).collect(toList());
+			movieNeighborhood.put(movie1Id, scores);
+		}
+		
+
+	}
+
+	private Map<Integer, SparseVector> movieRatings(UserRatingDAO userRatingDao, Set<Integer> userIds) {
 		Map<Integer, SparseVector> movieRatings = new HashMap<>();
 		for (Integer pUserId : userIds) {
 			SparseVector pUserRatings = userRatingDao.getUserRatings(pUserId).copy();
@@ -67,25 +91,7 @@ public class ItemItemModel {
 				movieRatings.get(movieId).put(pUserId, pUserRatings.get(movieId) - userRatingAverage);
 			}
 		}
-		
-		CosineSimilarity cosineSimilarity = new CosineSimilarity();
-		for (Entry<Integer, SparseVector> entry1 : movieRatings.entrySet()) {
-			Integer movie1Id = entry1.getKey();
-			SparseVector movie1Ratings = entry1.getValue();
-			List<ScoredId> scores = new ArrayList<>();
-			for (Entry<Integer, SparseVector> entry2 : movieRatings.entrySet()) {
-				Integer movie2Id = entry2.getKey();
-				if(!movie1Id.equals(movie2Id)) {
-					SparseVector movie2Ratings = entry2.getValue();
-					float cosine = cosineSimilarity.similarity(movie1Ratings, movie2Ratings);
-					scores.add(new ScoredId(movie2Id, Math.max(0, cosine)));
-				}
-			}
-			Collections.sort(scores, ScoredId.compareByScoreDesc());
-			movieNeighborhood.put(movie1Id, scores);
-		}
-		
-
+		return movieRatings;
 	}
 
 	

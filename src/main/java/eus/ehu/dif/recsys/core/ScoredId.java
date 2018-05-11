@@ -1,7 +1,5 @@
 package eus.ehu.dif.recsys.core;
 
-import java.util.Comparator;
-
 /**
  * Esta clase representa los productos evaluados, indicando el identificados y la valoración predicha
  */
@@ -46,15 +44,4 @@ public class ScoredId {
 		return rating;
 	}
 	
-	public static Comparator<ScoredId> compareByScoreDesc(){
-		return new Comparator<ScoredId>() {
-			
-			@Override
-			public int compare(ScoredId o1, ScoredId o2) {
-				Float r1 = new Float(o1.rating);
-				Float r2 = new Float(o2.rating);
-				return r2.compareTo(r1);
-			}
-		};
-	}
 }
